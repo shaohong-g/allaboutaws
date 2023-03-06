@@ -168,7 +168,21 @@ We will be creating a private PostgreSQL DB RDS instance (Learnerlab do not have
 
 </details>
 
+<details>
+<summary>NAT Gateway </summary>
 
+Learner Lab **does not allow** the creation of NAT Gateway. But we can also access the internet from a private subnet
+
+1. Make sure that your private subnet and public subnet are in the same availability zone.
+2. Create a NAT Gateway in the public subnet
+3. Edit the route table for your private subnet and add the followings:
+    - **Destination:** 0.0.0.0/0
+    - **Target:** nat-gateway-id
+
+If we do not wish to use NAT Gateway, we have to set up a reverse proxy to forward the HTTP requests. This include setting up an ec2 instance in the public subnet and having installing apache to do the reverse proxy. Reference source can be found [here](https://serverfault.com/questions/569626/how-to-set-up-port-forwarding-on-amazon-ec2).
+
+
+</details>
 
 <details>
 <summary>CS301 Research Implementation </summary>
@@ -219,6 +233,7 @@ The entire CSV file is processed and only sent to the database once all algorith
 ## Resources and References
 - [AWS - Creation of public and private subnet](https://www.1cloudhub.com/aws-vpc-101-creation-of-public-subnet-and-private-subnet-in-vpc-and-test-connectivity/)
 - [AWS - Glue: Crawling an Amazon S3 data store using a VPC endpoint](https://docs.aws.amazon.com/glue/latest/dg/connection-S3-VPC.html)
+- [AWS - Nat Gateway](https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateway-scenarios.html#public-nat-internet-access)
 - [AWS - RDS: Accessing db instance in a VPC](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_VPC.Scenarios.html#USER_VPC.Scenario1)
 - [AWS - VPC,EC2: no public dns](https://stackoverflow.com/questions/20941704/ec2-instance-has-no-public-dns)
 - [Connect private rds instances using dbeaver](https://fitdevops.in/connect-to-private-rds-instances-using-dbeaver/)
