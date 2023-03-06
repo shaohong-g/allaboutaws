@@ -66,12 +66,109 @@ The key difference between a private and a public subnet is that private subnet 
     - Click on your public subnet *(subnet-public-1)*
     - Under `Route table`, click `Edit route association` and change the route table ID
         - **Route table ID:**: rt-public
-6. YAY! you have successfully setup a private and a public subnet under your own VPC! You can visualise the resource map by clicking on your `VPC`. From the image below, you can see that the two different subnets are associated with different route table. Only the public subnet can access the internet gateway.
+6. Enable DNS hostname in VPC - allow public DNS hostname (if not you have to create eastic IP address for every resource)
+    - Check this StackOverFlow [here](https://stackoverflow.com/questions/20941704/ec2-instance-has-no-public-dns)
+    - `VPC (service)` -> `Virtual private cloud (left navigation menu)` -> `Your VPCs`
+    - Click on your VPC and `Actions` -> `Edit VPC settings`
+    - Check Enable DNS hostname
+7. Auto-assign public IPv4 address for your public subnet
+    - `VPC (service)` -> `Virtual private cloud (left navigation menu)` -> `Subnets`
+    - Click on your public subnet and `Actions` -> `Edit subnet settings`
+    - check `Enable auto-assign public IPv4 address`
+8. YAY! you have successfully setup a private and a public subnet under your own VPC! You can visualise the resource map by clicking on your `VPC`. From the image below, you can see that the two different subnets are associated with different route table. Only the public subnet can access the internet gateway.
     <img src="static/aws-vpc-setup-demo.png">
 
 
 
 </details>
+
+<details>
+<summary>Database Creation (private) and Connections</summary>
+
+### Summary
+
+<img src="static/aws-rds-setup-subnet.png">
+
+We will be creating a private PostgreSQL DB RDS instance (Learnerlab do not have access AWS Aurora) and will be connecting to it through our local laptop using a proxy (EC2). 
+
+**NOTE:** Do setup your vpc and subnets as from `Public and Private Subnet` section as we will be using them in our implementation.
+
+### Implementation Steps
+1. Create Proxy (EC2) in public subnet
+    - `EC2 (service)` -> `Instances (left navigation menu)` -> `Instances` -> `Launch instances`
+        - **Name:** ec2-proxy
+        - **Amazon Machine Image (AMI):** Amazon Linux 2 AMI (free tier eligible)
+        - **Instance type:** t2.micro (free tier eligible)
+        - **Key pair name:** cs301-aws-generic *(check prerequisite)*
+        - Click **Edit** under Network settings
+        - **VPC:** vpc-demo *(created from `Public and Private Subnet` section)*
+        - **Subnet:** subnet-public-1 *(created from `Public and Private Subnet` section)*
+        - **Auto-assign public IP:** Enable
+        - **Firewall (security groups):** Create security group (selected) 
+        - **Security group name:** proxy-ec2-sg
+2. Create DB subnet group 
+    - Before that, create another private subnet as DB subnet group need to cover at least 2 AZs. Follow `Public and Private Subnet` section
+    - `RDS (service)` -> `Subnet groups (left navigation menu)` -> `Create subnet group`
+        - **Name:** private-db-subnet
+        - **VPC:** vpc-demo *(created from `Public and Private Subnet` section)*
+        - **Availability Zones:** us-east-1b, us-east-1c *(where our private subnets are)*
+        - **Subnets:** 10.0.2.0/24, 10.0.3.0/24 *(created from `Public and Private Subnet` section)*
+3. Create RDS instance
+    - `RDS (service)` -> `Databases (left navigation menu)` -> `Create database`
+        - **Engine type:** PostgreSQL
+        - **Templates:** Free Tier
+        - **DB instance identifier:** demo-db
+        - **Master username:**: postgres **(Unchanged)**
+        - **Master password:**: < password >
+        - Under `Connectivity`
+        - **Compute resource:**: Don't connect to an EC2 compute resource (selected) -> **we will manually set up**
+        - **Virtual private cloud (VPC):** vpc-demo *(created from `Public and Private Subnet` section)*
+        - **DB subnet group:** private-db-subnet *(created in step 2)*
+        - **Public access:** No
+        - **VPC security group (firewall):** private-db-sg
+        - Under `Additional configuration` (Optional)
+            - **Initial database name:** < db name >
+
+4. Modify Security Group for your proxy and RDS
+    - `EC2 (service)` -> `Network & Security (left navigation menu)` -> `Security Groups`
+        - Click on the security group under the name you have assigned for your proxy in step 1 **(proxy-ec2-sg)**
+            - Under `Outbound rules`, click on `Edit outbound rules` and add
+                - **Type:** Custom TCP *(or you can just specific your database and it will update the port range as well)*
+                - **Port Range:** 5432 *(PostgreSQL - change accordingly to your db)*
+                - **Destination:** private-db-sg *(Security group created in step 3)* *(Alternatively, you can specify the rds instance IP directly)*
+        - Click on the security group under the name you have assigned for your RDS in step 3 **(private-db-sg)**
+            - Under `Inbound rules`, click on `Edit inbound rules`
+                - remove existing rules and add:
+                - **Type:** Custom TCP *(or you can just specific your database and it will update the port range as well)*
+                - **Port Range:** 5432 *(PostgreSQL - change accordingly to your db)*
+                - **Destination:** proxy-ec2-sg *(Security group of ec2)* *(Alternatively, you can specify the ec2 instance IP directly)*
+    - This allows your proxy to add as a bastion host to connect with the RDS in your private subnet
+5. Test Connection using Dbeaver
+    - Establish **SSH Tunneling** to connect the RDS instance in the private subnet to your EC2 to local machine
+        ```sh
+        ssh -i testinstance.pem -4 -N -L randomlocalport:DB-endpoint:DB-port username@PublicIPAddress
+
+        # For example
+        ssh -i cs301-aws-generic.pem -4 -N -L 8003:demo-db.cmkdoo9tbsig.us-east-1.rds.amazonaws.com:5432 ec2-user@ec2-34-200-231-59.compute-1.amazonaws.com
+        ```
+        - Explaination of command: [here](https://explainshell.com/explain?cmd=ssh+-i+testinstance.pem+-4+-N+-L+randomport%3ADB-endpoint%3ADB-port+username%40PublicIPAddress)
+    - You can check if the tunnel is established by listening to the port that you set above:
+        ```sh
+        netstat -ntap tcp | grep -i LISTEN | grep portnumber
+
+        # For example
+        netstat -ntap tcp | grep -i LISTEN | grep 8003
+
+        # Sample output
+        # tcp        0      0 127.0.0.1:8003          0.0.0.0:*               LISTEN      105/ssh
+        ```
+        - Explaination of command: [here](https://explainshell.com/explain?cmd=netstat+-ntap+tcp+%7C+grep+-i+LISTEN+%7C+grep+8003)
+    - You can then connect to the rds instance through the local port you have set
+        <img src="static/dbeaver-rds-connect.png">
+
+</details>
+
+
 
 <details>
 <summary>CS301 Research Implementation </summary>
@@ -122,8 +219,15 @@ The entire CSV file is processed and only sent to the database once all algorith
 ## Resources and References
 - [AWS - Creation of public and private subnet](https://www.1cloudhub.com/aws-vpc-101-creation-of-public-subnet-and-private-subnet-in-vpc-and-test-connectivity/)
 - [AWS - Glue: Crawling an Amazon S3 data store using a VPC endpoint](https://docs.aws.amazon.com/glue/latest/dg/connection-S3-VPC.html)
+- [AWS - RDS: Accessing db instance in a VPC](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_VPC.Scenarios.html#USER_VPC.Scenario1)
+- [AWS - VPC,EC2: no public dns](https://stackoverflow.com/questions/20941704/ec2-instance-has-no-public-dns)
+- [Connect private rds instances using dbeaver](https://fitdevops.in/connect-to-private-rds-instances-using-dbeaver/)
+- [Connect postgresql via bastion](https://gist.github.com/kshailen/0d4f78596b0ab12659be908163ed1fc2)
 - [awslambda-psycopg2](https://github.com/jkehler/awslambda-psycopg2)
 - [Processing-large-s3-files-with-aws-lambda](https://medium.com/swlh/processing-large-s3-files-with-aws-lambda-2c5840ae5c91)
 - [Subnet Calculator](https://www.davidc.net/sites/default/subnets/subnets.html)
 - [Youtube - Subnet Mask Explained](https://www.youtube.com/watch?v=s_Ntt6eTn94)
+
+
+
 
