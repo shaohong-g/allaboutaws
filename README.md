@@ -2,7 +2,7 @@
 Useful Aws Tutorials and Documentations
 
 ## Prerequisite 
-The below examples are experimented in `AWS Academy Leaner Lab`. Hence do **configure** your own IAM roles/users to allow the use of the various AWS resources.
+Most of the below examples are experimented in `AWS Academy Leaner Lab`. Hence do **configure** your own IAM roles/users to allow the use of the various AWS resources.
 
 We will be using the following for the creation of AWS services:
 - IAM role
@@ -11,6 +11,42 @@ We will be using the following for the creation of AWS services:
     - `EC2` -> `Network & Security` -> `Key Pairs` -> `Create key pair`
         - **Name:** cs301-aws-generic
         - **Private key file format:** .pem
+
+<details>
+<summary>AWS CLI Configuration Simple Guide (<b>NOT</b> Learner Lab) </summary>
+
+1. Install AWS Cli based on your operating system.
+    - [Download installer](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+2. Since this is not our main aws account, we can configure as a named profile and be part of our profile collection. Otherwise, just `aws configure` is suffice if you want a quick setup and assign the the values as your main credentials
+    ```sh
+    aws configure --profile <profile-name-of-your-choice>
+    # AWS Access Key ID [None]: AKIAI44QH8DHBEXAMPLE
+    # AWS Secret Access Key [None]: je7MtGbClwBF/2Zp9Utk/h3yCo8nvbEXAMPLEKEY
+    # Default region name [None]: us-east-1
+    # Default output format [None]: text
+    ```
+3. You can check the output by giving the command `aws configure list`
+    <img src="static/aws-cli-profile.png">
+4. Do note that if you are using a named profile, you have to specify the profile whenever you use an aws resource
+    - for e.g.
+    ```python
+    import boto3
+    
+    # Include this line to attach profile to a session
+    boto3.setup_default_session(profile_name='dev') 
+
+    boto3.resource('s3') # and so on and so forth
+    ```
+
+Below is a list of useful commands for your development
+- aws --version
+- aws configure list
+- aws configure set < key > < value >
+- aws configure get < key >
+- aws configure list-profiles
+
+
+</details>
 
 ## Examples 
 <details>
@@ -236,6 +272,7 @@ The entire CSV file is processed and only sent to the database once all algorith
 - [AWS - Nat Gateway](https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateway-scenarios.html#public-nat-internet-access)
 - [AWS - RDS: Accessing db instance in a VPC](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_VPC.Scenarios.html#USER_VPC.Scenario1)
 - [AWS - VPC,EC2: no public dns](https://stackoverflow.com/questions/20941704/ec2-instance-has-no-public-dns)
+- [AWS - Connect to boto3 using aws profile](https://stackoverflow.com/questions/33378422/how-to-choose-an-aws-profile-when-using-boto3-to-connect-to-cloudfront)
 - [Connect private rds instances using dbeaver](https://fitdevops.in/connect-to-private-rds-instances-using-dbeaver/)
 - [Connect postgresql via bastion](https://gist.github.com/kshailen/0d4f78596b0ab12659be908163ed1fc2)
 - [awslambda-psycopg2](https://github.com/jkehler/awslambda-psycopg2)
