@@ -1,0 +1,36 @@
+{
+    "AccessToken":{
+        "sub": "b75bbc4b-a974-44b2-96eb-2a21a6516d12",
+        "cognito:groups": [
+        "test-g1"
+        ],
+        "iss": "https://cognito-idp.ap-southeast-1.amazonaws.com/1232132132132131212",
+        "cognito:username": "user4",
+        "origin_jti": "2ea3bd30-be51-4530-a1ce-1772bb79094b",
+        "aud": "6ndqej83auur9gvd2uoh718rtb",
+        "event_id": "7f68081-97ee-448a-ae8f-0112e0bdd1d9",
+        "token_use": "id",
+        "auth_time": 1678310614,
+        "custom:test": "customtest",
+        "exp": 1678314571,
+        "iat": 1678310971,
+        "jti": "dsadsadsadsa"
+    },
+    "IdToken":{
+        "sub": "b75bbc4b-a974-44b2-96eb-2a21a6586d12",
+        "cognito:groups": [
+        "test-g1"
+        ],
+        "iss": "https://cognito-idp.ap-southeast-1.amazonaws.com/1232132132132131212",
+        "cognito:username": "user4",
+        "origin_jti": "2ea3bd30-be51-4530-a1ce-1772bb79094b",
+        "aud": "6ndqej83auur9gvd2uoh718rtb",
+        "event_id": "7f68081-97ee-448a-ae8f-0112e0bdd1d9",
+        "token_use": "id",
+        "auth_time": 1678310614,
+        "custom:test": "customtest",
+        "exp": 1678315262,
+        "iat": 1678311662,
+        "jti": "dsadsadsadsa"
+    }
+}

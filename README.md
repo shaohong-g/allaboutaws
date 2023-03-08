@@ -11,6 +11,9 @@ We will be using the following for the creation of AWS services:
     - `EC2` -> `Network & Security` -> `Key Pairs` -> `Create key pair`
         - **Name:** cs301-aws-generic
         - **Private key file format:** .pem
+- AWS CLI Named Profile
+    - **Named profile:** cs301
+    - We will not be using Learner Lab for any local deployment codes as it requires AWS Cli to be setup
 
 <details>
 <summary>AWS CLI Configuration Simple Guide (<b>NOT</b> Learner Lab) </summary>
@@ -31,7 +34,7 @@ We will be using the following for the creation of AWS services:
     - for e.g.
     ```python
     import boto3
-    
+
     # Include this line to attach profile to a session
     boto3.setup_default_session(profile_name='dev') 
 
@@ -221,6 +224,46 @@ If we do not wish to use NAT Gateway, we have to set up a reverse proxy to forwa
 </details>
 
 <details>
+<summary>AWS Cognito </summary>
+
+<p align="center" width="100%">
+    <img src="static/aws-cognito-diagram.png">
+</p>
+
+### Summary
+
+### Implementation Steps
+1. Set up user pool
+    - Settting up user pool is quite straightforward. Do refer to this [link](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pool-as-user-directory.html) for the various options that AWS provides.
+    - For this example, we will be doing the followings (else stay default):
+        - **Cognito user pool sign-in options:** User name
+        - **MFA enforcement:** No MFA *(speed up sign in process at the risk of security)*
+        - **Self-service account recovery:** Unchecked Self-service account recovery *(we will not be using the hosted UI)*
+        - **Self-registration:** Unchecked self-registration *(we will not be using the hosted UI)*
+        - **Allow Cognito to automatically send messages to verify and confirm - Recommended:** Unchecked *(Since we are creating fake user account, we will be using lambda or api to confirm user account instead)*
+        - Include
+        - Under `Custom attributes - optional`, [Name, Type, Min - optional, Max - optional, Mutable]
+            - Add username, string, 2, 10, NOT mutable
+            - Add test, string, 1, 50, mutable
+        - **Email provider:** Send email with Cognito *(for dev purposes)*
+        - **User pool name:** dev-pool
+        - **App client name:** dev-app-public *(client secret should be unchecked by default)*
+        - Under `Advanced app client settings`:
+            - Include **ALLOW_USER_PASSWORD_AUTH** in `Authentication flows`
+2. We can either setup users/groups in AWS console UI or creating them via python sdk (faster).
+    - Full list of commands can be found >[here](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cognito-idp.html)<
+3. Since we are not using Hosted_UI, it is better if we have our own codes for initializing authentication and revoking tokens.
+
+*Updating in progress, check scripts/utils/aws.py for more details*
+        
+
+</details>
+
+
+
+
+
+<details>
 <summary>CS301 Research Implementation </summary>
 
 ### Summary
@@ -280,6 +323,7 @@ The entire CSV file is processed and only sent to the database once all algorith
 - [Subnet Calculator](https://www.davidc.net/sites/default/subnets/subnets.html)
 - [Youtube - Subnet Mask Explained](https://www.youtube.com/watch?v=s_Ntt6eTn94)
 
-
-
-
+- [AWS - Cognito: force change password](https://stackoverflow.com/questions/40287012/how-to-change-user-status-force-change-password)
+- [AWS - Cognito: Refresh Token](https://stackoverflow.com/questions/65351577/boto3-initiate-auth-raises-notauthorizedexception-for-valid-refresh-tokens)
+- [AWS - Cognito: with Spring security](https://medium.com/cloud-base/resource-server-with-cognito-b7fbfbee0155)
+- [AWS - Cognito: with Spring](https://stackoverflow.com/questions/74572577/springboot-aws-cognito-configuration-i-need-some-clarification)

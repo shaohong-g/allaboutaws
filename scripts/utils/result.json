@@ -1,0 +1,21 @@
+{
+    "ChallengeParameters": {},
+    "AuthenticationResult": {
+        "AccessToken": "123123123213123JpVElSdlwvSFd3bUVWXC9RZzJQaXVseUZodzdsTGxuOFF4UXh5UWowdDY2V3c9IiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJiNzViYmM0Yi1hOTc0LTQ0YjItOTZlYi0yYTIxYTY1ODZkYWQiLCJjb2duaXRvOmdyb3VwcyI6WyJ0ZXN0LWcxIl0sImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC5hcC1zb3V0aGVhc3QtMS5hbWF6b25hd3MuY29tXC9hcC1zb3V0aGVhc3QtMV9OdnNhbHBlcm8iLCJjbGllbnRfaWQiOiI2bmRxZWo4M2F1dXI5Z3ZkMnVvaDc2OHJ0YiIsIm9yaWdpbl9qdGkiOiIyZWEzYmQzMC1iZTUxLTQ1MzAtYTFjZS04NzcyYmI3OTA5NGIiLCJldmVudF9pZCI6IjdmNjgwODQ4LTk3ZWUtNDQ4YS1hZThmLTAxMTJlMGJkZDFkOSIsInRva2VuX3VzZSI6ImFjY2VzcyIsInNjb3BlIjoiYXdzLmNvZ25pdG8uc2lnbmluLnVzZXIuYWRtaW4iLCJhdXRoX3RpbWUiOjE2NzgzMTA2MTQsImV4cCI6MTY3ODMxNTI2MiwiaWF0IjoxNjc4MzExNjYyLCJqdGkiOiJhNDY4Y2Q5Yi1lMWExLTQ4NTUtOGIyMy1lOTRhY2NkMmY3MjgiLCJ1c2VybmFtZSI6InVzZXI0In0.BTPZ2ANj7bQfrV3p_faeDzx1EGGSm5KxXvjU8MBM86CN-yegwvFv_vxUScmy5zMZkoLozIQEmpyTuNkvRZ3b8AqsZGyH9rbRJkF-OYXRJR4G1pnFSXLPzOl3k322pUiTJZscgdanXz_3cQH5HdFD2monQfQ_76ba1jOzWjrOAuB98q83jifekiKrrDnBldmb5xKGMAM0UmJzgQFa3U6y2sZ2zarayGFt-Jjf5vR8bgD0qTsHXKPwKFsHB3xChA_Y4Fi5qssIeIzUWlTmN5NJGiNmFmLLnAYqKghVNZQXna8KZEEfBg5CWEzqJJ21yugI3N4HBZLbEW33aqj9AZISog",
+        "ExpiresIn": 3600,
+        "TokenType": "Bearer",
+        "IdToken": "123123123213123I3TDZmUjJoZVZGMEtibFpWeGpoeE9uYmFFb1FHK1JoS2k2SDBFNUxFaExJPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJiNzViYmM0Yi1hOTc0LTQ0YjItOTZlYi0yYTIxYTY1ODZkYWQiLCJjb2duaXRvOmdyb3VwcyI6WyJ0ZXN0LWcxIl0sImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC5hcC1zb3V0aGVhc3QtMS5hbWF6b25hd3MuY29tXC9hcC1zb3V0aGVhc3QtMV9OdnNhbHBlcm8iLCJjb2duaXRvOnVzZXJuYW1lIjoidXNlcjQiLCJvcmlnaW5fanRpIjoiMmVhM2JkMzAtYmU1MS00NTMwLWExY2UtODc3MmJiNzkwOTRiIiwiYXVkIjoiNm5kcWVqODNhdXVyOWd2ZDJ1b2g3NjhydGIiLCJldmVudF9pZCI6IjdmNjgwODQ4LTk3ZWUtNDQ4YS1hZThmLTAxMTJlMGJkZDFkOSIsInRva2VuX3VzZSI6ImlkIiwiYXV0aF90aW1lIjoxNjc4MzEwNjE0LCJjdXN0b206dGVzdCI6ImN1c3RvbXRlc3QiLCJleHAiOjE2NzgzMTUyNjIsImlhdCI6MTY3ODMxMTY2MiwianRpIjoiOTQxZGQzOWItMWZmYy00NDRjLThiMjYtMzkzZmE5N2VjZDJjIn0.dnshgNexhUF7M6gsMi1ZwsgEN0IadS6eLVb08sr36FmK5vK2YEGkgX4O9HvYXy9-L8rIPip7noHsz5E8_Pi3D2d1XufIff_3rOHkDiVlp8yXnca4Xg_FeFBf001oSlQfUpriR2_HfcDf3RbpxWYa80nYFDnArNpbwF6Smf1pecooIKU-JyA2VicU6h1GV9AgYP88eerWOQ9WNVUOOrYL4XOSYpUtO_oOsKKXPzohaAcoKT5MUxWg9Pg6gc7xMNuFkAwDjHEvZu7lc9GDN8D1kIgvnDi1kb9U1Q5mel4RZnHBvtTbazxZwEA7Do2DVeJ4vG8mCgyXpv6Gc2Yz-HwQ0Q"
+    },
+    "ResponseMetadata": {
+        "RequestId": "123123520a-2ab3-4d74-b99f-a88db3f28b20",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "date": "Wed, 08 Mar 2023 21:41:02 GMT",
+            "content-type": "application/x-amz-json-1.1",
+            "content-length": "2266",
+            "connection": "keep-alive",
+            "x-amzn-requestid": "12312231520a-2ab3-4d74-b99f-a88db3f28b20"
+        },
+        "RetryAttempts": 0
+    }
+}
