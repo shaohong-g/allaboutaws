@@ -14,6 +14,23 @@ We will be using the following for the creation of AWS services:
 - AWS CLI Named Profile
     - **Named profile:** cs301
     - We will not be using Learner Lab for any local deployment codes as it requires AWS Cli to be setup
+- Local python packages
+    - Create new python environment
+    ```sh
+    python -m venv .venv
+    ```
+    - Activate environment
+    ```sh
+    # Windows
+    .venv\Scripts\activate
+
+    # Mac/Linux
+    source .venv/bin/activate
+    ```
+    - Install required libraries
+    ```sh
+    pip install -r requirements.txt
+    ```
 
 <details>
 <summary>AWS CLI Configuration Simple Guide (<b>NOT</b> Learner Lab) </summary>
@@ -224,7 +241,7 @@ If we do not wish to use NAT Gateway, we have to set up a reverse proxy to forwa
 </details>
 
 <details>
-<summary>AWS Cognito </summary>
+<summary>AWS Cognito -Userpool </summary>
 
 <p align="center" width="100%">
     <img src="static/aws-cognito-diagram.png">
@@ -252,10 +269,66 @@ If we do not wish to use NAT Gateway, we have to set up a reverse proxy to forwa
             - Include **ALLOW_USER_PASSWORD_AUTH** in `Authentication flows`
 2. We can either setup users/groups in AWS console UI or creating them via python sdk (faster).
     - Full list of commands can be found >[here](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cognito-idp.html)<
-3. Since we are not using Hosted_UI, it is better if we have our own codes for initializing authentication and revoking tokens.
+    - There are helper functions set up for you in [aws.py](./scripts/utils/aws.py) for faster creation of users/groups. Alternatively, you can create via the console UI.
+3. There are two ways to manage users in user pool and get authenication tokens, either through **Hosted UI (OIDC API)** or **Amazon Cognito user pools API (Boto3 python in this case)**. The difference between the two is that we can set custom scope for OIDC API whereas a fixed scope: `aws.cognito.signin.user.admin` is assigned for native API like boto3. 
+    
+    Reference link: [here](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pools-API-operations.html)
+    - Hosted UI (OIDC API)
+        - Since we did not configure any Hosted UI in step 1, we have to create a cognito domain for our Hosted UI authentication endpoints.
+            - Click on your userpool and navigate `App integration` -> `Domain` -> `Action` -> `Create Cognito Domain`
+        - 
+    - Native API (Boto3)
+        - Configure config.json and .env file
+            - Change the **username** and **password** in [config.json](./scripts/utils/config.json) file under `cognito.get_token.AuthParameters`
+            - Set **COGNITO_CLIENT_ID** and **COGNITO_CLIENT_SECRET** (if applicable) in [.env file](./scripts/utils/.env.example)
+            - Rename `.env.example` to `.env` to follow along the next few steps and prevent any commit/push to github thereafter.
+        - aws.py
+            - As mentioned, there are some helper functions which is from the boto3 documentation. You can get/refresh/revoke token using this script.
+            ```sh
+            usage: aws.py [-h] [--resource RESOURCE] [--action ACTION] [--config CONFIG] [--env ENV] [--s3profile S3PROFILE]
+                        [--verbose]
+
+            options:
+            -h, --help            show this help message and exit
+            --resource RESOURCE   Supported resource: cognito
+            --action ACTION       Supported action: get_token, refresh_token, revoke_token
+            --config CONFIG       Config file relative to aws.py
+            --env ENV             Environment file relative to aws.py
+            --s3profile S3PROFILE
+                                    S3 Session for local development
+            --verbose             Print everything
+            ```
+        - Get Access Token
+            - `COGNITO_REFRESH_TOKEN`, `COGNITO_ACCESS_TOKEN`, `COGNITO_ID_TOKEN` will be saved in your environment file if response is successful.
+            ```sh
+            # Sample code
+            python scripts\utils\aws.py --resource cognito --action get_token --config config.json --env .env --s3profile cs301 --verbose 
+            ```            
+        - Refresh Access Token
+            - `COGNITO_ACCESS_TOKEN`, `COGNITO_ID_TOKEN` will be saved in your environment file if response is successful.
+            ```sh
+            # Sample code
+            python scripts\utils\aws.py --resource cognito --action refresh_token --config config.json --env .env --s3profile cs301 --verbose 
+            ``` 
+        - Refresh Revoke Token
+            ```sh
+            # Sample code
+            python scripts\utils\aws.py --resource cognito --action revoke_token --config config.json --env .env --s3profile cs301 --verbose 
+            ``` 
+4. Create a simple API gateway for testing
+
+
 
 *Updating in progress, check scripts/utils/aws.py for more details*
-        
+
+Get Token and custom scope through Hoist UI and OIDC endpoints
+https://docs.aws.amazon.com/cognito/latest/developerguide/token-endpoint.html
+https://docs.aws.amazon.com/cognito/latest/developerguide/user-pools-API-operations.html
+
+https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-create-cognito-user-pool.html
+
+
+
 
 </details>
 
@@ -327,3 +400,7 @@ The entire CSV file is processed and only sent to the database once all algorith
 - [AWS - Cognito: Refresh Token](https://stackoverflow.com/questions/65351577/boto3-initiate-auth-raises-notauthorizedexception-for-valid-refresh-tokens)
 - [AWS - Cognito: with Spring security](https://medium.com/cloud-base/resource-server-with-cognito-b7fbfbee0155)
 - [AWS - Cognito: with Spring](https://stackoverflow.com/questions/74572577/springboot-aws-cognito-configuration-i-need-some-clarification)
+- [AWS - Cognito: With scope](https://stackoverflow.com/questions/63177503/login-cognito-using-with-scope-openid-using-id-token-or-access-token-dont-worki)
+- [AWS - Cognito: Caching](https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-using-tokens-caching-tokens.html)
+- [AWS - Cognito: Resource servers](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-define-resource-servers.html)
+- [AWS - Cognito: User pool api](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pools-API-operations.html)

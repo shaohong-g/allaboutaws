@@ -1,0 +1,22 @@
+{
+    "ChallengeParameters": {},
+    "AuthenticationResult": {
+        "AccessToken": "",
+        "ExpiresIn": 3600,
+        "TokenType": "Bearer",
+        "RefreshToken": "",
+        "IdToken": ""
+    },
+    "ResponseMetadata": {
+        "RequestId": "28c21aa2-fb99-41cf-",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "date": "Thu, 09 Mar 2023 18:46:29 GMT",
+            "content-type": "application/x-amz-json-1.1",
+            "content-length": "4030",
+            "connection": "keep-alive",
+            "x-amzn-requestid": "28c21aa2-fb99-41cf-"
+        },
+        "RetryAttempts": 0
+    }
+}

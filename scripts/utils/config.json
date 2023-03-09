@@ -1,0 +1,12 @@
+{
+    "cognito": {
+        "get_token" : {
+            "AuthFlow": "USER_PASSWORD_AUTH",
+            "AuthParameters": {"USERNAME": "user4", "PASSWORD": "P@ssw0rd"}
+        },
+        "refresh_token" : {
+            "AuthFlow": "REFRESH_TOKEN_AUTH"
+        }
+    }
+
+}

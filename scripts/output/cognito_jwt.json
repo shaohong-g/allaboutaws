@@ -1,20 +1,20 @@
 {
     "AccessToken":{
-        "sub": "b75bbc4b-a974-44b2-96eb-2a21a6516d12",
+        "sub": "b75bbc4b-a974-44b2-96eb-2a21a6586d12",
         "cognito:groups": [
-        "test-g1"
+          "test-g1"
         ],
         "iss": "https://cognito-idp.ap-southeast-1.amazonaws.com/1232132132132131212",
-        "cognito:username": "user4",
-        "origin_jti": "2ea3bd30-be51-4530-a1ce-1772bb79094b",
-        "aud": "6ndqej83auur9gvd2uoh718rtb",
-        "event_id": "7f68081-97ee-448a-ae8f-0112e0bdd1d9",
-        "token_use": "id",
-        "auth_time": 1678310614,
-        "custom:test": "customtest",
-        "exp": 1678314571,
-        "iat": 1678310971,
-        "jti": "dsadsadsadsa"
+        "client_id": "6ndqej83auur9gvd2uohdsadasdasdsa",
+        "origin_jti": "857744f8-ffba-49d9-918b-2d26cdsadsadsadsa",
+        "event_id": "69a05de4-9d0f-4bc9-8f20-d893dsadsadas",
+        "token_use": "access",
+        "scope": "aws.cognito.signin.user.admin",
+        "auth_time": 1678317305,
+        "exp": 1678320905,
+        "iat": 1678317305,
+        "jti": "035b7395-9dc9-4182-8fc9-6d6dsadsadas",
+        "username": "user4"
     },
     "IdToken":{
         "sub": "b75bbc4b-a974-44b2-96eb-2a21a6586d12",
