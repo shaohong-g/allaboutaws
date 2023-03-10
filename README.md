@@ -276,7 +276,8 @@ If we do not wish to use NAT Gateway, we have to set up a reverse proxy to forwa
     - Hosted UI (OIDC API)
         - Since we did not configure any Hosted UI in step 1, we have to create a cognito domain for our Hosted UI authentication endpoints.
             - Click on your userpool and navigate `App integration` -> `Domain` -> `Action` -> `Create Cognito Domain`
-        - Till now, we can either get the access_token by logging in through the hosted UI or using [Amazon Cognito Identity SDK](https://www.npmjs.com/package/amazon-cognito-identity-js). Detailed documentation can be found >[here](https://developer.amazon.com/docs/login-with-amazon/authorization-code-grant.html#server-apps)<
+        - We can either get the access_token by logging in through the hosted UI or using [Amazon Cognito Identity SDK](https://www.npmjs.com/package/amazon-cognito-identity-js). Detailed documentation can be found >[here](https://developer.amazon.com/docs/login-with-amazon/authorization-code-grant.html#server-apps)<
+        - Flow: Get authorization Code -> get Access token -> get Identity token
         - *Demonstration example pending*
     - Native API (Boto3)
         - Configure config.json and .env file
