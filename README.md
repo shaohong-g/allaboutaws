@@ -276,7 +276,8 @@ If we do not wish to use NAT Gateway, we have to set up a reverse proxy to forwa
     - Hosted UI (OIDC API)
         - Since we did not configure any Hosted UI in step 1, we have to create a cognito domain for our Hosted UI authentication endpoints.
             - Click on your userpool and navigate `App integration` -> `Domain` -> `Action` -> `Create Cognito Domain`
-        - 
+        - Till now, we can either get the access_token by logging in through the hosted UI or using [Amazon Cognito Identity SDK](https://www.npmjs.com/package/amazon-cognito-identity-js). Detailed documentation can be found >[here](https://developer.amazon.com/docs/login-with-amazon/authorization-code-grant.html#server-apps)<
+        - *Demonstration example pending*
     - Native API (Boto3)
         - Configure config.json and .env file
             - Change the **username** and **password** in [config.json](./scripts/utils/config.json) file under `cognito.get_token.AuthParameters`
@@ -315,24 +316,52 @@ If we do not wish to use NAT Gateway, we have to set up a reverse proxy to forwa
             # Sample code
             python scripts\utils\aws.py --resource cognito --action revoke_token --config config.json --env .env --s3profile cs301 --verbose 
             ``` 
-4. Create a simple API gateway for testing
-
+    - Curl -> [Using javascript SDK - no custom scope](https://gist.github.com/miguelmota/8b519212aca47210d529532b3d8e5b2f)
+4. Create a simple API gateway for testing `(Serverless Authentication and Authorization)`
+    - A simple walkthrough can be found >[here](https://aws.amazon.com/premiumsupport/knowledge-center/api-gateway-cognito-user-pool-authorizer/)<
+    - `Api Gateway (service)` -> `Create API` -> `REST API (NON-private)`
+        - **API name:** dev-apigateway
+    - Create Authorizers
+        - Click on your api gateway and go to `Authorizers (left menu)` -> `Create new Authorizer`
+        - **Name:** dev-authorizer-1
+        - **Type:** Cognito
+        - **Cognito User Pool :** *Click on the user pool that you have created*
+        - **Token Source:** Authorization
+    - Created the following endpoints (`Actions` -> `Create methods`)
+        - GET endpoint: authenticating using `access token`
+            - **Integration type:** Mock **(just need to return a json object)**
+            - Click on the endpoint and under `GET - Integration Response`, expand the current response with response status of **200**. Under `Mapping Templates`, add mapping template:
+                - **Content-Type:** application/json
+                - **Generate template:** Empty
+                - **Template:** {"message": "Authorized!!!"}
+            - Under Settings
+                - **Authorization:** dev-authorizer-1 *(might have to refresh to see your created authorizers)*
+                - **OAuth Scopes:** aws.cognito.signin.user.admin *(we are creating the tokens from native API)* 
+        - POST endpoint: authenticating using `identity token`
+            - **Integration type:** Mock **(just need to return a json object)**
+            - Click on the endpoint and under `GET - Integration Response`, expand the current response with response status of **200**. Under `Mapping Templates`, add mapping template:
+                - **Content-Type:** application/json
+                - **Generate template:** Empty
+                - **Template:** {"message": "Authorized!!!"}
+            - Under Settings
+                - **Authorization:** dev-authorizer-1 *(might have to refresh to see your created authorizers)*
+5. You will find that you will get the result: `{"message": "Authorized!!!"}` if you include the correct token for the authorization headers for both GET and POST endpoint respectively. 
+    - By doing **OAuth2 Authentication**, you are using the **access token** to authenticate your identity as well as to authorize access to the various endpoints based on the scope provided.
+    - Whereas if you are using the **identity token** to authenticate, AWS will just check whether the credentials matches those in the user pool **(openid authentication)**.
+    - Scenario: provide access token to GET endpoint *(success)*
+        <img src="static/aws-apigateway-cognito-authorized.png">
+    - Scenario: provide identity token to GET endpoint *(Fail)*
+        <img src="static/aws-apigateway-cognito-unauthorized.png">
+6. Futher research (at your own sweet time)
+    - API Gateway Lambda authorization to customize access to API (abit overkill for our school project)
+        - [AWS: API Gateway Using Lambda Authorizer](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-use-lambda-authorizer.html)
+        - [Github: Custom Auth Using Lambda](https://github.com/aws-samples/amazon-cognito-api-gateway/blob/80ee4cd9933c4362e30c62a9e52ac5b880d340b6/custom-auth/lambda.py#L56)
 
 
 *Updating in progress, check scripts/utils/aws.py for more details*
 
-Get Token and custom scope through Hoist UI and OIDC endpoints
-https://docs.aws.amazon.com/cognito/latest/developerguide/token-endpoint.html
-https://docs.aws.amazon.com/cognito/latest/developerguide/user-pools-API-operations.html
-
-https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-create-cognito-user-pool.html
-
-
-
 
 </details>
-
-
 
 
 
@@ -404,3 +433,12 @@ The entire CSV file is processed and only sent to the database once all algorith
 - [AWS - Cognito: Caching](https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-using-tokens-caching-tokens.html)
 - [AWS - Cognito: Resource servers](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-define-resource-servers.html)
 - [AWS - Cognito: User pool api](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pools-API-operations.html)
+- [AWS - Cognito: scope](https://stackoverflow.com/questions/74778608/getting-access-tokens-with-cognito-using-username-and-password)
+- [AWS - Cognito: Endpoint](https://docs.aws.amazon.com/cognito/latest/developerguide/token-endpoint.html)
+- [AWS - Cognito: Apigatway](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-create-cognito-user-pool.html)
+- [AWS - Cognito: JWT Authorizer](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-jwt-authorizer.html)
+- [AWS - Cognito: Enable Cognito User pool in ApiGateway](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-enable-cognito-user-pool.html)
+- [AWS - Cognito: Authorization code grant](https://developer.amazon.com/docs/login-with-amazon/authorization-code-grant.html)
+- [AWS - Cognito: Lambda as Post-processing Authorizer](https://github.com/aws-samples/amazon-cognito-api-gateway/tree/80ee4cd9933c4362e30c62a9e52ac5b880d340b6)
+- [AWS - Cognito: Lambda as Post-processing Authorizer - 2](https://stackoverflow.com/questions/71274311/aws-api-gateway-authorize-cognito-user-groups)
+- [AWS - APIGateway: Mock not retrieving body requests](https://stackoverflow.com/questions/69635065/api-gateway-not-retreiving-request-body)
