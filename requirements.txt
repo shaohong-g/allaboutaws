@@ -1,2 +1,9 @@
 boto3
 python-dotenv
+Flask
+flask-cors      # Optional
+jwt             # Optional
+flask-blueprint
+gunicorn        # Optional
+gevent          # Optional
+python-jose

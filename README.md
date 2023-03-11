@@ -240,6 +240,7 @@ If we do not wish to use NAT Gateway, we have to set up a reverse proxy to forwa
 
 </details>
 
+
 <details>
 <summary>AWS Cognito -Userpool </summary>
 
@@ -250,7 +251,7 @@ If we do not wish to use NAT Gateway, we have to set up a reverse proxy to forwa
 ### Summary
 
 ### Implementation Steps
-1. Set up user pool
+1. Set up user pool *(without hosted UI)*
     - Settting up user pool is quite straightforward. Do refer to this [link](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pool-as-user-directory.html) for the various options that AWS provides.
     - For this example, we will be doing the followings (else stay default):
         - **Cognito user pool sign-in options:** User name
@@ -270,21 +271,19 @@ If we do not wish to use NAT Gateway, we have to set up a reverse proxy to forwa
 2. We can either setup users/groups in AWS console UI or creating them via python sdk (faster).
     - Full list of commands can be found >[here](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/cognito-idp.html)<
     - There are helper functions set up for you in [aws.py](./scripts/utils/aws.py) for faster creation of users/groups. Alternatively, you can create via the console UI.
-3. There are two ways to manage users in user pool and get authenication tokens, either through **Hosted UI (OIDC API)** or **Amazon Cognito user pools API (Boto3 python in this case)**. The difference between the two is that we can set custom scope for OIDC API whereas a fixed scope: `aws.cognito.signin.user.admin` is assigned for native API like boto3. 
-    
-    Reference link: [here](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pools-API-operations.html)
+3. There are two ways to manage users in user pool and get authentication tokens, either through **Hosted UI (OIDC API)** or **Amazon Cognito user pools API (Boto3 python in this case)**. The difference between the two is that we can set `custom scope` for OIDC API whereas a fixed scope: `aws.cognito.signin.user.admin` is assigned for native API like boto3. Full explanation can be found [here](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pools-API-operations.html).
     - Hosted UI (OIDC API)
         - Since we did not configure any Hosted UI in step 1, we have to create a cognito domain for our Hosted UI authentication endpoints.
             - Click on your userpool and navigate `App integration` -> `Domain` -> `Action` -> `Create Cognito Domain`
-        - We can either get the access_token by logging in through the hosted UI or using [Amazon Cognito Identity SDK](https://www.npmjs.com/package/amazon-cognito-identity-js). Detailed documentation can be found >[here](https://developer.amazon.com/docs/login-with-amazon/authorization-code-grant.html#server-apps)<
+        - We can either get the access_token by logging in through the hosted UI or using [Amazon Cognito Identity SDK](https://www.npmjs.com/package/amazon-cognito-identity-js), [AWS JWT Verify](https://github.com/awslabs/aws-jwt-verify). Detailed documentation can be found >[here](https://developer.amazon.com/docs/login-with-amazon/authorization-code-grant.html#server-apps)<
         - Flow: Get authorization Code -> get Access token -> get Identity token
         - *Demonstration example pending*
     - Native API (Boto3)
         - Configure config.json and .env file
             - Change the **username** and **password** in [config.json](./scripts/utils/config.json) file under `cognito.get_token.AuthParameters`
-            - Set **COGNITO_CLIENT_ID** and **COGNITO_CLIENT_SECRET** (if applicable) in [.env file](./scripts/utils/.env.example)
-            - Rename `.env.example` to `.env` to follow along the next few steps and prevent any commit/push to github thereafter.
-        - aws.py
+            - Set **COGNITO_CLIENT_ID** and **COGNITO_CLIENT_SECRET** (if applicable) in [.env file](./scripts/.env.example)
+            - Rename `.env.example` to `.env` to follow along the next few steps and prevent any unnecessary commit/push to github thereafter.
+        - Helper script: aws.py
             - As mentioned, there are some helper functions which is from the boto3 documentation. You can get/refresh/revoke token using this script.
             ```sh
             usage: aws.py [-h] [--resource RESOURCE] [--action ACTION] [--config CONFIG] [--env ENV] [--s3profile S3PROFILE]
@@ -304,64 +303,151 @@ If we do not wish to use NAT Gateway, we have to set up a reverse proxy to forwa
             - `COGNITO_REFRESH_TOKEN`, `COGNITO_ACCESS_TOKEN`, `COGNITO_ID_TOKEN` will be saved in your environment file if response is successful.
             ```sh
             # Sample code
-            python scripts\utils\aws.py --resource cognito --action get_token --config config.json --env .env --s3profile cs301 --verbose 
+            python scripts\utils\aws.py --resource cognito --action get_token --config config.json --env ../env --s3profile cs301 --verbose 
             ```            
         - Refresh Access Token
             - `COGNITO_ACCESS_TOKEN`, `COGNITO_ID_TOKEN` will be saved in your environment file if response is successful.
             ```sh
             # Sample code
-            python scripts\utils\aws.py --resource cognito --action refresh_token --config config.json --env .env --s3profile cs301 --verbose 
+            python scripts\utils\aws.py --resource cognito --action refresh_token --config config.json --env ../env --s3profile cs301 --verbose 
             ``` 
         - Refresh Revoke Token
             ```sh
             # Sample code
-            python scripts\utils\aws.py --resource cognito --action revoke_token --config config.json --env .env --s3profile cs301 --verbose 
+            python scripts\utils\aws.py --resource cognito --action revoke_token --config config.json --env ../env --s3profile cs301 --verbose 
             ``` 
-    - Curl -> [Using javascript SDK - no custom scope](https://gist.github.com/miguelmota/8b519212aca47210d529532b3d8e5b2f)
-4. Create a simple API gateway for testing `(Serverless Authentication and Authorization)`
-    - A simple walkthrough can be found >[here](https://aws.amazon.com/premiumsupport/knowledge-center/api-gateway-cognito-user-pool-authorizer/)<
-    - `Api Gateway (service)` -> `Create API` -> `REST API (NON-private)`
-        - **API name:** dev-apigateway
-    - Create Authorizers
-        - Click on your api gateway and go to `Authorizers (left menu)` -> `Create new Authorizer`
-        - **Name:** dev-authorizer-1
-        - **Type:** Cognito
-        - **Cognito User Pool :** *Click on the user pool that you have created*
-        - **Token Source:** Authorization
-    - Created the following endpoints (`Actions` -> `Create methods`)
-        - GET endpoint: authenticating using `access token`
-            - **Integration type:** Mock **(just need to return a json object)**
-            - Click on the endpoint and under `GET - Integration Response`, expand the current response with response status of **200**. Under `Mapping Templates`, add mapping template:
-                - **Content-Type:** application/json
-                - **Generate template:** Empty
-                - **Template:** {"message": "Authorized!!!"}
-            - Under Settings
-                - **Authorization:** dev-authorizer-1 *(might have to refresh to see your created authorizers)*
-                - **OAuth Scopes:** aws.cognito.signin.user.admin *(we are creating the tokens from native API)* 
-        - POST endpoint: authenticating using `identity token`
-            - **Integration type:** Mock **(just need to return a json object)**
-            - Click on the endpoint and under `GET - Integration Response`, expand the current response with response status of **200**. Under `Mapping Templates`, add mapping template:
-                - **Content-Type:** application/json
-                - **Generate template:** Empty
-                - **Template:** {"message": "Authorized!!!"}
-            - Under Settings
-                - **Authorization:** dev-authorizer-1 *(might have to refresh to see your created authorizers)*
-5. You will find that you will get the result: `{"message": "Authorized!!!"}` if you include the correct token for the authorization headers for both GET and POST endpoint respectively. 
-    - By doing **OAuth2 Authentication**, you are using the **access token** to authenticate your identity as well as to authorize access to the various endpoints based on the scope provided.
-    - Whereas if you are using the **identity token** to authenticate, AWS will just check whether the credentials matches those in the user pool **(openid authentication)**.
-    - Scenario: provide access token to GET endpoint *(success)*
+4. Create a simple API gateway for testing `(Serverless Authentication and Authorization)`. A simple walkthrough can be found >[here](https://aws.amazon.com/premiumsupport/knowledge-center/api-gateway-cognito-user-pool-authorizer/)< 
+    - Set up Api Gateway. Do refer to `API Gateway` section for further details on setting up an Api gateway and authorizers. The following endpoints are:
+        ```sh
+        /
+        GET                 # Mock endpoint, Cognito Authorizer                         (1)
+        POST                # Mock endpoint, Cognito Authorizer                         (2)
+            /admin-only     
+            GET             # api/0/test endpoint from aws.py, Custom lambda Authorizer (3)
+            POST            # api/0/test endpoint from aws.py, Custom lambda Authorizer (4)
+                /all
+                GET         # api/0/test endpoint from aws.py, Custom lambda Authorizer (5)
+            /test
+                /{proxy+}
+                ANY         # api/0/ endpoint from aws.py, Cognito Authorizer           (6)
+        ```
+        - In this demonstration, we will be using mainly the (1),(2),(3),(5) to showcase the authorization process between AWS Cognito and AWS Api gateway.
+        - For the custom lambda authorizer, the code can be found in [custom-auth](./scripts/custom-auth/). To set up a lambda function:
+            - Zip the codes. The below command will install the dependencies in the `custom-auth/package` directory, zip the whole custom-auth folder and the zip file will be stored in `scripts/output` folder.
+                ```sh
+                python scripts/utils/general.py --action zip --in-dir ../custom-auth --out-dir ../output/custom-auth --deploy-lambda
+                ```
+                - Go to AWS lambda UI console and upload the zip file. 
+                - Under `Configuration` -> `Environmental variables`, set the following environment variables:
+                    - ENV -> *(PRODUCTION)*
+                    - AWS_REGION
+                    - COGNITO_USER_POOL_ID
+                    - COGNITO_CLIENT_ID
+            - Funtionalities:
+                - Authenticate tokens manually. Can only use `access_token` as **client_id** is needed for the validation process
+                - Only users in `test-g1` group will have access to `/admin-only` endpoint. All users will have access to the others (5).
+        - Create Authorizers with `Authorization` as the token source.
+        - For mock endpoints (1) and (2), configure the response output to be `{"message": "Authorized!!!"}`
+            - Set `aws.cognito.signin.user.admin` as **OAuth Scope** for mock endpoint (1)
+        - For the endpoints in our [custom flask api](./scripts/flask_main.py), we will be deploying it with ngrok to get a public proxy to our localhost port
+            - Install [ngrok](https://ngrok.com/download) to create a proxy to our localhost temporary. 
+            - Run flask_main.py and create a proxy to the local port
+                ```sh
+                # Run Flask app
+                python scripts/flask_main.py
+
+                # Start Ngrok
+                ngrok http 8000     # since app is running on port 8000
+                ```
+            - Use the proxy url from ngrok for Endpoint URL in API Gateway - *in this case: https://c3d9-118-200-57-4.ap.ngrok.io*
+                <img src="static/ngrok-run.png">
+            - `api/0/test` endpoint will mainly print out all **query values**, **json values**, **headers values** as well as any possible **kwangs** that are send to the endpoint. 
+
+
+5. **(ENDPOINT (1) & (2))** You will find that you will get the result: `{"message": "Authorized!!!"}` if you include the correct token for the authorization headers for both GET and POST endpoint respectively. 
+    - Scenario: provide access token to GET endpoint *(success)* - NOTE: rmb you have set **OAuth Scope** for this
         <img src="static/aws-apigateway-cognito-authorized.png">
     - Scenario: provide identity token to GET endpoint *(Fail)*
         <img src="static/aws-apigateway-cognito-unauthorized.png">
-6. Futher research (at your own sweet time)
-    - API Gateway Lambda authorization to customize access to API (abit overkill for our school project)
-        - [AWS: API Gateway Using Lambda Authorizer](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-use-lambda-authorizer.html)
-        - [Github: Custom Auth Using Lambda](https://github.com/aws-samples/amazon-cognito-api-gateway/blob/80ee4cd9933c4362e30c62a9e52ac5b880d340b6/custom-auth/lambda.py#L56)
+6. **(ENDPOINT (3) & (5))** Every users in the userpool can access `Endpoint (5)` but only those in **test-g1** group can access `Endpoint (3)`. These configurations are set in the custom lambda authorizer.
+    - Workflow:
+        <img src="static/aws-custom-auth-workflow.png">
+    - Scenario: user NOT in test-g1 accessing endpoint 3 (DENY)
+        <img src="static/aws-apigateway-get-explicit-deny.png">
+
+</details>
 
 
-*Updating in progress, check scripts/utils/aws.py for more details*
+<details>
+<summary>AWS Api Gateway </summary>
+
+### Summary
+Amazon API Gateway is an AWS service for creating, publishing, maintaining, monitoring, and securing REST, HTTP, and WebSocket APIs at any scale. In this demonstration, I will be showing you a simple 
 
 
+- `Api Gateway (service)` -> `Create API` -> `REST API (NON-private)`
+    - **API name:** dev-apigateway
+- Create Authorizers
+    - Click on your api gateway and go to `Authorizers (left menu)` -> `Create new Authorizer`
+    - **Name:** dev-authorizer-1
+    - **Type:** Cognito
+    - **Cognito User Pool :** *Click on the user pool that you have created*
+    - **Token Source:** Authorization
+- Created the following endpoints (`Actions` -> `Create methods`)
+    - GET endpoint: authenticating using `access token`
+        - **Integration type:** Mock **(just need to return a json object)**
+        - Click on the endpoint and under `GET - Integration Response`, expand the current response with response status of **200**. Under `Mapping Templates`, add mapping template:
+            - **Content-Type:** application/json
+            - **Generate template:** Empty
+            - **Template:** {"message": "Authorized!!!"}
+        - Under Settings
+            - **Authorization:** dev-authorizer-1 *(might have to refresh to see your created authorizers)*
+            - **OAuth Scopes:** aws.cognito.signin.user.admin *(we are creating the tokens from native API)* 
+    - POST endpoint: authenticating using `identity token`
+        - **Integration type:** Mock **(just need to return a json object)**
+        - Click on the endpoint and under `GET - Integration Response`, expand the current response with response status of **200**. Under `Mapping Templates`, add mapping template:
+            - **Content-Type:** application/json
+            - **Generate template:** Empty
+            - **Template:** {"message": "Authorized!!!"}
+        - Under Settings
+            - **Authorization:** dev-authorizer-1 *(might have to refresh to see your created authorizers)*
+
+    - By doing **OAuth2 Authentication**, you are using the **access token** to authenticate your identity as well as to authorize access to the various endpoints based on the scope provided.
+    - Whereas if you are using the **identity token** to authenticate, AWS will just check whether the credentials matches those in the user pool **(openid authentication)**. 
+
+
+    - Check parsed data from frontend to backend:
+        - Create a proxy endpoint to AWS Api Gateway with 
+            - Do refer to the `API Gateway` section or [AWS docs: Create simple proxy for http](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-create-api-as-simple-proxy-for-http.html)
+            - **Integration type:** ANY
+            - **Endpoint URL:** *Get the proxy url from ngrok - in this case: https://c3d9-118-200-57-4.ap.ngrok.io*
+        - Set Authorizer like we did in step 4
+        - As payload and headers are passthrough from the API gateway to the endpoint, we can get the ACCESS_TOKEN or the ID_TOKEN via the `Authorization` header.
+            <img src="static/aws-apigateway-ngrok-response.png">
+    - Create a method endpoint (without proxy)
+        - Include claims in request [here](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-enable-cognito-user-pool.html)
+
+Mapping
+https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-mapping-template-reference.html#input-variable-reference
+https://docs.amazonaws.cn/en_us/apigateway/latest/developerguide/how-to-method-settings-execution-console.html
+
+pass claims to header:
+https://stackoverflow.com/questions/45631758/how-to-pass-api-gateway-authorizer-context-to-a-http-integration
+
+Validate claims
+https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-jwt-authorizer.html
+
+output policy
+https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-resource-policies-examples.html
+
+Custom Authorizer
+https://www.alexdebrie.com/posts/lambda-custom-authorizers/
+https://github.com/aws-samples/amazon-cognito-api-gateway/tree/80ee4cd9933c4362e30c62a9e52ac5b880d340b6
+https://github.com/DMalliaros/aws-python-lambda-authorizers
+https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-lambda-authorizer-output.html
+
+Reach VPC private subnet
+https://devops.stackexchange.com/questions/254/how-to-only-allow-api-gateway-requests-to-reach-our-ec2-instances
 </details>
 
 
@@ -413,33 +499,59 @@ The entire CSV file is processed and only sent to the database once all algorith
 
 
 ## Resources and References
-- [AWS - Creation of public and private subnet](https://www.1cloudhub.com/aws-vpc-101-creation-of-public-subnet-and-private-subnet-in-vpc-and-test-connectivity/)
-- [AWS - Glue: Crawling an Amazon S3 data store using a VPC endpoint](https://docs.aws.amazon.com/glue/latest/dg/connection-S3-VPC.html)
-- [AWS - Nat Gateway](https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateway-scenarios.html#public-nat-internet-access)
-- [AWS - RDS: Accessing db instance in a VPC](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_VPC.Scenarios.html#USER_VPC.Scenario1)
-- [AWS - VPC,EC2: no public dns](https://stackoverflow.com/questions/20941704/ec2-instance-has-no-public-dns)
-- [AWS - Connect to boto3 using aws profile](https://stackoverflow.com/questions/33378422/how-to-choose-an-aws-profile-when-using-boto3-to-connect-to-cloudfront)
+
+<details>
+<summary>AWS Docs</summary>
+
+- [AWS Api Gateway: Integration Request with Authorizer claims in Api Gateway](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-enable-cognito-user-pool.html)
+- [AWS Api Gateway: Resource policies](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-resource-policies-examples.html)
+- [AWS Cognito: Access scope integration with AWS Cognito and AWS Api Gateway](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-create-cognito-user-pool.html)
+- [AWS Cognito: Caching tokens](https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-using-tokens-caching-tokens.html)
+- [AWS Cognito: JWT Authorizer](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-jwt-authorizer.html)
+- [AWS Cognito: Resource servers](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-define-resource-servers.html)
+- [AWS Cognito: Setting up user pool](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pool-as-user-directory.html)
+- [AWS Cognito: Token Endpoint](https://docs.aws.amazon.com/cognito/latest/developerguide/token-endpoint.html)
+- [AWS Cognito: Using the Amazon Cognito native and OIDC APIs](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pools-API-operations.html)
+- [AWS Glue: Connection in AWS Glue Data Catalog](https://docs.aws.amazon.com/glue/latest/dg/glue-connections.html)
+- [AWS Glue: s3 data store connection to VPC endpoint in Glue](https://docs.aws.amazon.com/glue/latest/dg/connection-S3-VPC.html)
+- [AWS lambda: Preparing python packages](https://docs.aws.amazon.com/lambda/latest/dg/python-package.html)
+- [AWS Nat Gateway: Route Tables Configuration](https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateway-scenarios.html#public-nat-internet-access)
+- [AWS RDS: Accessing private db instance in a VPC](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_VPC.Scenarios.html#USER_VPC.Scenario1)
+
+
+
+</details>
+
+<details>
+<summary>Guides</summary>
+
+- [Authorization code grant using hosted UI](https://developer.amazon.com/docs/login-with-amazon/authorization-code-grant.html)
+- [Connect postgresql db via bastion host](https://gist.github.com/kshailen/0d4f78596b0ab12659be908163ed1fc2)
 - [Connect private rds instances using dbeaver](https://fitdevops.in/connect-to-private-rds-instances-using-dbeaver/)
-- [Connect postgresql via bastion](https://gist.github.com/kshailen/0d4f78596b0ab12659be908163ed1fc2)
-- [awslambda-psycopg2](https://github.com/jkehler/awslambda-psycopg2)
-- [Processing-large-s3-files-with-aws-lambda](https://medium.com/swlh/processing-large-s3-files-with-aws-lambda-2c5840ae5c91)
+- [Creation of public and private subnet](https://www.1cloudhub.com/aws-vpc-101-creation-of-public-subnet-and-private-subnet-in-vpc-and-test-connectivity/)
+- [Curl token Using javascript SDK - no custom scope](https://gist.github.com/miguelmota/8b519212aca47210d529532b3d8e5b2f)
+- [Github: Lambda as Post-processing Authorizer](https://github.com/aws-samples/amazon-cognito-api-gateway/tree/80ee4cd9933c4362e30c62a9e52ac5b880d340b6)
+- [Processing large s3 files with AWS Lambda](https://medium.com/swlh/processing-large-s3-files-with-aws-lambda-2c5840ae5c91)
+- [Set up an Amazon Cognito user pool as an authorizer on an API Gateway REST API](https://aws.amazon.com/premiumsupport/knowledge-center/api-gateway-cognito-user-pool-authorizer/)
+- [Spring security with AWS Cognito](https://medium.com/cloud-base/resource-server-with-cognito-b7fbfbee0155)
+
+</details>
+
+<details>
+<summary>Others</summary>
+
+- [Github: awslambda-psycopg2](https://github.com/jkehler/awslambda-psycopg2)
+
+- [Stackoverflow: Authorize Cognito user group](https://stackoverflow.com/questions/71274311/aws-api-gateway-authorize-cognito-user-groups)
+- [Stackoverflow: Connect to aws profile using boto3](https://stackoverflow.com/questions/33378422/how-to-choose-an-aws-profile-when-using-boto3-to-connect-to-cloudfront)
+- [Stackoverflow: Force change password in AWS Cognito](https://stackoverflow.com/questions/40287012/how-to-change-user-status-force-change-password)
+- [Stackoverflow: Mock endpoint in AWS Gateway not retrieving body requests](https://stackoverflow.com/questions/69635065/api-gateway-not-retreiving-request-body)
+- [Stackoverflow: No public DNS during EC2 creation](https://stackoverflow.com/questions/20941704/ec2-instance-has-no-public-dns)
+- [Stackoverflow: Nodejs with AWS Cognito scope](https://stackoverflow.com/questions/63177503/login-cognito-using-with-scope-openid-using-id-token-or-access-token-dont-worki)
+- [Stackoverflow: Pass Authorizer context to Header in Api Gateway](https://stackoverflow.com/questions/45631758/how-to-pass-api-gateway-authorizer-context-to-a-http-integration)
+- [Stackoverflow: Springboot configuration with AWS Cognito](https://stackoverflow.com/questions/74572577/springboot-aws-cognito-configuration-i-need-some-clarification)
+
 - [Subnet Calculator](https://www.davidc.net/sites/default/subnets/subnets.html)
 - [Youtube - Subnet Mask Explained](https://www.youtube.com/watch?v=s_Ntt6eTn94)
+</details>
 
-- [AWS - Cognito: force change password](https://stackoverflow.com/questions/40287012/how-to-change-user-status-force-change-password)
-- [AWS - Cognito: Refresh Token](https://stackoverflow.com/questions/65351577/boto3-initiate-auth-raises-notauthorizedexception-for-valid-refresh-tokens)
-- [AWS - Cognito: with Spring security](https://medium.com/cloud-base/resource-server-with-cognito-b7fbfbee0155)
-- [AWS - Cognito: with Spring](https://stackoverflow.com/questions/74572577/springboot-aws-cognito-configuration-i-need-some-clarification)
-- [AWS - Cognito: With scope](https://stackoverflow.com/questions/63177503/login-cognito-using-with-scope-openid-using-id-token-or-access-token-dont-worki)
-- [AWS - Cognito: Caching](https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-using-tokens-caching-tokens.html)
-- [AWS - Cognito: Resource servers](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-define-resource-servers.html)
-- [AWS - Cognito: User pool api](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pools-API-operations.html)
-- [AWS - Cognito: scope](https://stackoverflow.com/questions/74778608/getting-access-tokens-with-cognito-using-username-and-password)
-- [AWS - Cognito: Endpoint](https://docs.aws.amazon.com/cognito/latest/developerguide/token-endpoint.html)
-- [AWS - Cognito: Apigatway](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-create-cognito-user-pool.html)
-- [AWS - Cognito: JWT Authorizer](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-jwt-authorizer.html)
-- [AWS - Cognito: Enable Cognito User pool in ApiGateway](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-enable-cognito-user-pool.html)
-- [AWS - Cognito: Authorization code grant](https://developer.amazon.com/docs/login-with-amazon/authorization-code-grant.html)
-- [AWS - Cognito: Lambda as Post-processing Authorizer](https://github.com/aws-samples/amazon-cognito-api-gateway/tree/80ee4cd9933c4362e30c62a9e52ac5b880d340b6)
-- [AWS - Cognito: Lambda as Post-processing Authorizer - 2](https://stackoverflow.com/questions/71274311/aws-api-gateway-authorize-cognito-user-groups)
-- [AWS - APIGateway: Mock not retrieving body requests](https://stackoverflow.com/questions/69635065/api-gateway-not-retreiving-request-body)

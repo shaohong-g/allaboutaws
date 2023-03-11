@@ -1,3 +1,7 @@
+**/__pycache__
 **/*.pem
 .venv
 **/*.env
+**/*.log
+**/*.zip
+scripts/custom-auth/package

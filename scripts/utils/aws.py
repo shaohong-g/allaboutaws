@@ -256,6 +256,12 @@ def cognito_list_devices(AccessToken, Limit = None, PaginationToken = None, prof
 
 ############################## Main ##############################
 if __name__ == "__main__":
+    """
+    Sample code
+    get token: python scripts\utils\aws.py --resource cognito --action get_token --config config.json --env ../env --s3profile cs301 --verbose 
+    refresh token: python scripts\utils\aws.py --resource cognito --action refresh_token --config config.json --env ../env --s3profile cs301 --verbose
+    revoke token: python scripts\utils\aws.py --resource cognito --action revoke_token --config config.json --env ../env --s3profile cs301 --verbose 
+    """
     import json
     import dotenv
     from dotenv import load_dotenv
