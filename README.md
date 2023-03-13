@@ -249,6 +249,7 @@ If we do not wish to use NAT Gateway, we have to set up a reverse proxy to forwa
 </p>
 
 ### Summary
+In this demonstration, we will be setting up user pool and retrieving the tokens via Native Api (boto3). After which, we create an Api Gateway which consists of both cognito authorizer and a custom lambda authorizer.
 
 ### Implementation Steps
 1. Set up user pool *(without hosted UI)*
@@ -381,51 +382,62 @@ If we do not wish to use NAT Gateway, we have to set up a reverse proxy to forwa
 <details>
 <summary>AWS Api Gateway </summary>
 
-### Summary
-Amazon API Gateway is an AWS service for creating, publishing, maintaining, monitoring, and securing REST, HTTP, and WebSocket APIs at any scale. In this demonstration, I will be showing you a simple 
-
-
-- `Api Gateway (service)` -> `Create API` -> `REST API (NON-private)`
-    - **API name:** dev-apigateway
-- Create Authorizers
+*pending~*
+1. Creating an Api Gateway: `Api Gateway (service)` -> `Create API`
+    - `Choose an API type`: HTTP API, WebSocket API, REST API, REST API Private
+        - We will be focusing on **REST API** for normal use cases and **REST API Private** if you want to connect to a private API in your VPC.
+        - `Resources`: path attached to the domain
+        - `Methods`: Different API method pertaining to the resource. *(ANY is a special keyword to represent all methods)*
+    - Proxy Integration
+        - Cannot do body mapping for Integration Response
+2. Authorizer
     - Click on your api gateway and go to `Authorizers (left menu)` -> `Create new Authorizer`
-    - **Name:** dev-authorizer-1
-    - **Type:** Cognito
-    - **Cognito User Pool :** *Click on the user pool that you have created*
-    - **Token Source:** Authorization
-- Created the following endpoints (`Actions` -> `Create methods`)
-    - GET endpoint: authenticating using `access token`
-        - **Integration type:** Mock **(just need to return a json object)**
-        - Click on the endpoint and under `GET - Integration Response`, expand the current response with response status of **200**. Under `Mapping Templates`, add mapping template:
-            - **Content-Type:** application/json
-            - **Generate template:** Empty
-            - **Template:** {"message": "Authorized!!!"}
-        - Under Settings
-            - **Authorization:** dev-authorizer-1 *(might have to refresh to see your created authorizers)*
-            - **OAuth Scopes:** aws.cognito.signin.user.admin *(we are creating the tokens from native API)* 
-    - POST endpoint: authenticating using `identity token`
-        - **Integration type:** Mock **(just need to return a json object)**
-        - Click on the endpoint and under `GET - Integration Response`, expand the current response with response status of **200**. Under `Mapping Templates`, add mapping template:
-            - **Content-Type:** application/json
-            - **Generate template:** Empty
-            - **Template:** {"message": "Authorized!!!"}
-        - Under Settings
-            - **Authorization:** dev-authorizer-1 *(might have to refresh to see your created authorizers)*
+        - **Name:** dev-authorizer-1
+        - **Type:** Cognito
+        - **Cognito User Pool :** *Click on the user pool that you have created*
+        - **Token Source:** Authorization
+    - As payload and headers are passthrough from the API gateway to the endpoint, we can get the ACCESS_TOKEN or the ID_TOKEN via the `Authorization` header. *(NOTE: This does not apply to custom authorizer!)*
+        <img src="static/aws-apigateway-ngrok-response.png">
+    - Authentication and Authorization
+        - By doing **OAuth2 Authentication**, you are using the **access token** to authenticate your identity as well as to authorize access to the various endpoints based on the scope provided. You will be setting **OAuth Scope** for in your endpoint.
+        - Whereas if you are using the **identity token** to authenticate, AWS will just check whether the credentials matches those in the user pool **(openid authentication)**. You will **NOT** be setting any **OAuth Scope** for this.
+3. Custom Configuration
+    - Get Request
+        - Do remember to include the various queries in request resources
+        <img src="static/aws-apigateway-get.png">
+    - Mock endpoints
 
-    - By doing **OAuth2 Authentication**, you are using the **access token** to authenticate your identity as well as to authorize access to the various endpoints based on the scope provided.
-    - Whereas if you are using the **identity token** to authenticate, AWS will just check whether the credentials matches those in the user pool **(openid authentication)**. 
+    - Map authorizor's claims to headers
+        - Normal Authorizer
+            - You can obtain the claims by mapping to headers via `context.authorizer.claims`. Do note that context can only accept string or int values.The following are valid mapping for the headers:
+                - context.authorizer.claims.sub
+                - context.authorizer.claims.token_use
+                - context.authorizer.claims.cognito:username
+        - Customized Authorizer
+            - The output format for the authorizer is as follows, where you will be saving your claims under context
+                ```sh
+                {
+                    policyDocument, 
+                    principalId=claims['sub'], 
+                    context={
+                        "test1": claims['username']
+                    }
+                }
+                ```
+            - You can obtain your context by mapping to headers via `context.authorizer`. Do note that context can only accept string or int values. The following are valid mapping for the headers:
+                - context.authorizer.test1 
 
 
-    - Check parsed data from frontend to backend:
-        - Create a proxy endpoint to AWS Api Gateway with 
-            - Do refer to the `API Gateway` section or [AWS docs: Create simple proxy for http](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-create-api-as-simple-proxy-for-http.html)
-            - **Integration type:** ANY
-            - **Endpoint URL:** *Get the proxy url from ngrok - in this case: https://c3d9-118-200-57-4.ap.ngrok.io*
-        - Set Authorizer like we did in step 4
-        - As payload and headers are passthrough from the API gateway to the endpoint, we can get the ACCESS_TOKEN or the ID_TOKEN via the `Authorization` header.
-            <img src="static/aws-apigateway-ngrok-response.png">
-    - Create a method endpoint (without proxy)
-        - Include claims in request [here](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-enable-cognito-user-pool.html)
+Create awpi gateway that can only be access from your vpc privately -create an interface VPC endpoint
+https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-private-apis.html#apigateway-private-api-create-interface-vpc-endpoint
+
+Api with private integration - using vpc link
+https://docs.amazonaws.cn/en_us/apigateway/latest/developerguide/getting-started-with-private-integration.html
+https://medium.com/swlh/aws-api-gateway-private-integration-with-http-api-and-a-vpc-link-602360a1cd84
+https://manurana.medium.com/tutorial-connecting-an-api-gateway-to-a-vpc-using-vpc-link-682a21281263
+https://stackoverflow.com/questions/32671394/can-i-specify-http-endpoint-in-a-vpc-as-resource-in-aws-api-gateway
+https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-private-integration.html
+https://devops.stackexchange.com/questions/254/how-to-only-allow-api-gateway-requests-to-reach-our-ec2-instances
 
 Mapping
 https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-mapping-template-reference.html#input-variable-reference
@@ -433,21 +445,26 @@ https://docs.amazonaws.cn/en_us/apigateway/latest/developerguide/how-to-method-s
 
 pass claims to header:
 https://stackoverflow.com/questions/45631758/how-to-pass-api-gateway-authorizer-context-to-a-http-integration
+https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-enable-cognito-user-pool.html
 
 Validate claims
 https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-jwt-authorizer.html
 
 output policy
 https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-resource-policies-examples.html
+https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-lambda-authorizer-output.html
 
 Custom Authorizer
 https://www.alexdebrie.com/posts/lambda-custom-authorizers/
 https://github.com/aws-samples/amazon-cognito-api-gateway/tree/80ee4cd9933c4362e30c62a9e52ac5b880d340b6
 https://github.com/DMalliaros/aws-python-lambda-authorizers
 https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-lambda-authorizer-output.html
+How custom authorizer works:
+https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-user-pools-using-tokens-verifying-a-jwt.html
+https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-use-lambda-authorizer.html
 
-Reach VPC private subnet
-https://devops.stackexchange.com/questions/254/how-to-only-allow-api-gateway-requests-to-reach-our-ec2-instances
+
+
 </details>
 
 
