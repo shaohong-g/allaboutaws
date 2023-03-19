@@ -45,9 +45,19 @@ We will be using the following for the creation of AWS services:
     # Default region name [None]: us-east-1
     # Default output format [None]: text
     ```
-3. You can check the output by giving the command `aws configure list`
+3. Alternatively, you can manually key inside the credentials and config file.
+    ```sh
+    # on Linux and macOS
+    ~/.aws/credentials
+    ~/.aws/config
+
+    # on Windows
+    C:\Users\USERNAME\.aws\credentials
+    C:\Users\USERNAME\.aws\config
+    ```
+4. You can check the output by giving the command `aws configure list`
     <img src="static/aws-cli-profile.png">
-4. Do note that if you are using a named profile, you have to specify the profile whenever you use an aws resource
+5. Do note that if you are using a named profile, you have to specify the profile whenever you use an aws resource
     - for e.g.
     ```python
     import boto3
@@ -467,7 +477,14 @@ https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-use-lamb
 
 </details>
 
+<details>
+<summary>CS301 Research Implementation </summary>
 
+source:
+https://blog.developer.adobe.com/deploy-microservices-using-aws-ecs-fargate-and-api-gateway-1b5e71129338
+https://stackoverflow.com/questions/61265108/aws-ecs-fargate-resourceinitializationerror-unable-to-pull-secrets-or-registry
+
+</details>
 
 <details>
 <summary>CS301 Research Implementation </summary>
